@@ -2,7 +2,7 @@
 
 Machine learning examples implemented in clojure coming from :
 
-   - Machine Learning in Action : dataset available on
+   - Machine Learning in Action : datasets available on https://github.com/pbharrin/machinelearninginaction .
 
 It's a playground to understand more about algorithms and concepts used in data science.
 
