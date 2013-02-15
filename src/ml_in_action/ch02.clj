@@ -30,7 +30,8 @@
 
 
 ;;
-;; dataset can be found here :
+;; dataset can be found here
+;; https://github.com/pbharrin/machinelearninginaction/blob/master/Ch02/digits.zip
 ;;
 (defn grab-imagesets
   "load in memory data files under folder as map (data => class).
@@ -43,6 +44,8 @@ Each file representing a number is converted into to a vector"
                     ]))
           {} (.list (clojure.java.io/file folder))))
 
+;; TODO very slow : can be improved with reducers ?
+;; use criterium for benchmarking
 (defn check-classifier
   "Runs classifier across data in test and print out the error-rate"
   [classifier test]
@@ -55,3 +58,9 @@ Each file representing a number is converted into to a vector"
         error-rate (/ failed-count (count test))]
     (println "Among a population " (count test) " elements, "
              failed-count " failed : " (format "%.4f" (double error-rate)))))
+
+(comment
+  (def dd (grab-imagesets ".../machinelearninginaction/Ch02/trainingDigits"))
+  (def dt (grab-imagesets ".../machinelearninginaction/Ch02/testDigits"))
+  (check-classifier (build-knn-classifier dd 10) dt)
+  )
