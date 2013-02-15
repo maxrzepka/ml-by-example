@@ -4,4 +4,4 @@
 
 (deftest test-classify0
   (testing "Simple classification"
-    (is (= :B (classify0 data0 [0 0] 1)))))
+    (is (= :B (classify0 data0 1 [0 0])))))

@@ -8,10 +8,6 @@ It's a playground to understand more about algorithms and concepts used in data 
 
 Feel free to read, clone, fork, correct, improve the project as you want.
 
-## Usage
-
-
-
 ## License
 
 Copyright © 2013 Maximilien Rzepka
