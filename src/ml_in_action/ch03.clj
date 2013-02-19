@@ -1,16 +1,14 @@
 (ns ml-in-action.ch03)
 
 
-
 ;; # Decision tree based on shannon entropy
 ;;
 ;; The choosen datastructure is a plain table where by convention :
 ;;    - last column is the answers of our question.
 ;;    - the other columns (features) are used to guess the answer.
 ;;
-;;  The algorithm to build the decision tree is the ID3
-;;
-;;TODO make the datastructure more explicit
+;;  The algorithm used to build the decision tree is the ID3
+;;  http://en.wikipedia.org/wiki/ID3_algorithm
 ;;
 (def d [[:feat1 :feat2 :class] [1 1 :yes] [1 1 :yes] [1 0 :no] [0 1 :no] [0 1 :no]])
 (def d1 [[:feat1 :feat2 :class] [1 1 :maybe] [1 1 :yes] [1 0 :no] [0 1 :no] [0 1 :no]])
