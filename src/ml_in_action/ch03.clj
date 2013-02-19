@@ -23,6 +23,13 @@
             [:no  :yes :no]
             [:no  :yes :no]])
 
+(defn lenses [filepath]
+  (vec
+   (list* [:age :prescript :astigmatic :tear-rate :lense]
+          (mapv #(vec (seq (.split % "\t")))
+                   (clojure.string/split-lines (slurp filepath))))))
+
+
 (defn shannon
   "Computes the shannon entropy of a dataset.
 The values should be nominal or discrete.
@@ -41,46 +48,40 @@ The values should be nominal or discrete.
     (assert (> total 0) (str "wshannon empty datasets : " datasets))
     (reduce (fn [s d]
               (let [p (/ (count d) total)]
-                (+ (* p (shannon d)))))
+                (+ s (* p (shannon d)))))
             0 datasets)))
+
+(defn extract-class
+  "By convention data contains a header and class is the last column"
+  [data]
+  (mapv last (next data)))
 
 (defn extract-by
   "Extracts the records of data where the feature equals val
 and remove this feature.
-Warning : return vector of vectors because feature is an index
 "
-  [data feature val]
-  (vec (keep (fn [line]
-               (when (= (get line feature) val) ;;retains
+  [data position val]
+  (vec (keep (fn [record]
+               (when (= (get record position) val) ;;retains
                  ;; exclude pos-th column
                  (vec (keep-indexed
                        (fn [i e]
-                         (when (not (= feature i)) e))
-                       line))))
+                         (when (not (= position i)) e))
+                       record))))
              data)))
 
 (defn split-by
-  "Returns the map : value of feature => data filtered and feature excluded"
+  "Returns the map : value of feature => data filtered and feature column excluded"
   [data feature]
   ;;(println "split-by " data " " feature)
-  (into {}
-        (map #(vector % (extract-by data feature %))
-             (set (map #(nth % feature) data)))))
-
-(defn split-shannon
-  "Computes the shannon entropy after splitting the dataset by feature pos :
-The formula is the pondered sum of subsets entropy.
-"
-  [data pos]
-  (let [len (count data)
-        ;;the distinct values of the feature
-        values (set (map #(nth % pos) data))]
-    (reduce
-     (fn [s v]
-       (let [sub-set (extract-by data pos v)]
-         (+ s (* (/ (count sub-set) len) ;;proportion of v
-                 (shannon (map last sub-set))))))
-     0 values)))
+  (let [header (first data)
+        position ((zipmap header (range)) feature)
+        split-header (filterv #(not= feature %) header)]
+    (into {}
+          (map #(vector %
+                        (list* split-header
+                               (extract-by (rest data) position %)))
+               (set (map #(nth % position) (rest data)))))))
 
 
 (defn choose-best-feature
@@ -91,32 +92,21 @@ Returns a map with the following keys : feature data shannon "
    (sort-by :shannon
             (map (fn [feat]
                    (let [datasets (split-by data feat)
-                         shan (wshannon (vals datasets))]
-
+                         shan (wshannon (map extract-class
+                                             (vals datasets)))]
                      {:feature feat :data datasets :shannon shan}))
-                 (-> data first count dec range)))))
+                 (-> data first butlast)))))
 
-;;TODO correct feature label
 (defn decide
   "Build decision tree"
-  [data]
-  (cond (= 1 (-> data first count)) ;; no more feature
-    (distinct (map first data)) ;;remaining undecidable values
-    (= 1 (->> data (map last) distinct count)) ;;decided
-    (-> data first last)
-    :else ;;go deeper
-    (let [t (choose-best-feature data)
-          data (into {} (map (fn subdec [[k v]] (vector k (decide v))) (:data t)))]
-      (assoc t :data data))))
-
-(defn choose-best-feature1
-  "Returns the feature having the lowest entropy after split."
-  [data]
-  (let [total-features (-> data first count dec)]
-    (first ;; feature
-     (first ;; lowest entropy
-      ;; order by entropy
-      (sort-by second <
-               ;; compute the entropy for each feature
-               (map #(vector % (split-shannon data %))
-                    (range total-features)))))))
+  ([header data]
+     (decide (vec (list* header data))))
+  ([data]
+     (cond (= 1 (-> data first count)) ;; no more feature
+           (distinct (extract-class data)) ;;remaining undecidable values
+           (= 1 (-> data extract-class distinct count)) ;;decided
+           (-> data next first last)
+           :else ;;go deeper
+           (let [t (choose-best-feature data)
+                 data (into {} (map (fn subdec [[k v]] (vector k (decide v))) (:data t)))]
+             (assoc t :data data)))))
